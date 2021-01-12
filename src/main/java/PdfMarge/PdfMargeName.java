@@ -125,20 +125,25 @@ public class PdfMargeName {
 
 					inputName = paths[i] + "\\" + margeName[i];
 
-					InputStream input = new FileInputStream(inputName);
+					try(InputStream input = new FileInputStream(inputName);){
+						list.add(input);
+					}
 
-					list.add(input);
+
 
 				}
 
-				FileOutputStream mergedPDFOutputStream =  new FileOutputStream(margeFile);
+				try(FileOutputStream mergedPDFOutputStream =  new FileOutputStream(margeFile);){
+					PDFMergerUtility pdfMerger = new PDFMergerUtility();
+					pdfMerger.addSources(list);
+					pdfMerger.setDestinationStream(mergedPDFOutputStream);
 
-				PDFMergerUtility pdfMerger = new PDFMergerUtility();
-				pdfMerger.addSources(list);
-				pdfMerger.setDestinationStream(mergedPDFOutputStream);
+				    //PDFのMerge出力
+				    pdfMerger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly());
+				}
 
-			    //PDFのMerge出力
-			    pdfMerger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly());
+
+
 
 
 			}catch (IOException e) {

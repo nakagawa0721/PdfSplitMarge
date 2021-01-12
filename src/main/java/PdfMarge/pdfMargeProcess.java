@@ -138,20 +138,22 @@ public class pdfMargeProcess {
 
 				inputName = paths[i] + "\\" + margeName[i];
 
-				InputStream input = new FileInputStream(inputName);
+				try(InputStream input = new FileInputStream(inputName);){
+					list.add(input);
+				}
 
-				list.add(input);
+
 
 			}
 
-			FileOutputStream mergedPDFOutputStream =  new FileOutputStream(margeFile);
+			try(FileOutputStream mergedPDFOutputStream =  new FileOutputStream(margeFile);){
+				PDFMergerUtility pdfMerger = new PDFMergerUtility();
+				pdfMerger.addSources(list);
+				pdfMerger.setDestinationStream(mergedPDFOutputStream);
 
-			PDFMergerUtility pdfMerger = new PDFMergerUtility();
-			pdfMerger.addSources(list);
-			pdfMerger.setDestinationStream(mergedPDFOutputStream);
-
-			//PDFのMerge出力
-			pdfMerger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly());
+				//PDFのMerge出力
+				pdfMerger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly());
+			}
 
 			//パスワードが空白でないとき実行
 			if(!pass.equals("")) {
@@ -300,10 +302,15 @@ public class pdfMargeProcess {
 
 			//同じファイルを扱うためにバイト配列でPdfを開く
 			reader = new PdfReader(bFile);
-			stamper = new PdfStamper(reader, new FileOutputStream(fileName));
+			try(FileOutputStream fileOut = new FileOutputStream(fileName)){
+				stamper = new PdfStamper(reader, fileOut);
+				// PDFファイルにパスワードを設定する
+				stamper.setEncryption(userPassword, ownerPassword, PdfWriter.ALLOW_PRINTING |PdfWriter.ALLOW_SCREENREADERS , PdfWriter.ENCRYPTION_AES_256);
+			}
 
-			// PDFファイルにパスワードを設定する
-			stamper.setEncryption(userPassword, ownerPassword, PdfWriter.ALLOW_PRINTING |PdfWriter.ALLOW_SCREENREADERS , PdfWriter.ENCRYPTION_AES_256);
+
+
+
 
 
 
