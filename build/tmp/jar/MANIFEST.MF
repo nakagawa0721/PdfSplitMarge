@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Implementation-Title: PdfSplitCreate
+Implementation-Version: 0.04
+Main-Class: pdf.PdfSplitCreate
+
