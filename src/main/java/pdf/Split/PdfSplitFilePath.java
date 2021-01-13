@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -29,10 +30,7 @@ public class PdfSplitFilePath {
 	ArrayList<String> pdfList = new ArrayList<String>();
 
 
-	public ArrayList<String> SplitCreate(String[] pdf) {
-
-
-		String p = null;
+	public ArrayList<String> SplitCreate(String[] pdfs) {
 
 		String targetPath = null;
 
@@ -44,80 +42,88 @@ public class PdfSplitFilePath {
 
 		String savePath = null;
 
+		for( String pdf : pdfs) {
 
-		for(int i = 0 ; i < pdf.length; i++) {
+			targetPath = FilenameUtils.getFullPath(pdf);
 
-			StringBuilder strb = new StringBuilder(pdf[i]);
+//			for(int j = strb.length() -1 ; j > 0 ; j--) {
+//				p = String.valueOf(strb.charAt(j));
+//				//ファイル名を削除
+//				if(p.equals("\\")) {
+//					strb.setLength(strb.length() - (strb.length() - j));
+//					targetPath = strb.toString();
+//					break;
+//				}
+//			}
 
-
-			for(int j = strb.length() -1 ; j > 0 ; j--) {
-				p = String.valueOf(strb.charAt(j));
-				//ファイル名を削除
-				if(p.equals("\\")) {
-					strb.setLength(strb.length() - (strb.length() - j));
-					targetPath = strb.toString();
-					break;
-				}
-			}
-
-			File pdfFile = new File(pdf[i]);
+			File pdfFile = new File(pdf);
 
 			try {
 
 				if(pdfFile.isFile()) {
-					PDDocument pdDoc = PDDocument.load(pdfFile);
-					int numberOfPages = pdDoc.getNumberOfPages();
 
-					for(int n = 0; n < numberOfPages; n++) {
+					try(PDDocument pdDoc = PDDocument.load(pdfFile);) {
+						int numberOfPages = pdDoc.getNumberOfPages();
 
-						// ドキュメントオブジェクトの作成
-						PDDocument pdc = new PDDocument();
-						//ページオブジェクトの作成
-						PDPage page = (PDPage) pdDoc.getPage( n );
-						pdc.addPage(page);
+						for(int n = 0; n < numberOfPages; n++) {
 
-						//PDFf内のテキストを取得
-						PDFTextStripper stripper = new PDFTextStripper();
-						String text = stripper.getText(pdc);
-						String strtext = text;
 
-						//改行ごとに配列に追加
-						pdfPage = strtext.split("\n");
+							try (PDDocument pdc = new PDDocument();){
+								// ドキュメントオブジェクトの作成
 
-						//明細名を取得する
-						details = getDetails();
+								//ページオブジェクトの作成
+								PDPage page = (PDPage) pdDoc.getPage( n );
+								pdc.addPage(page);
 
-						if(details.equals("給与明細")) {
-							//給与明細分割処理
-							fileName = ssp.salarySplitPdf(pdfPage);
-						}else if(details.equals("賞与明細")) {
-							//賞与明細分割処理
-							fileName = bsp.bonusSplitPdf(pdfPage);
+								//PDFf内のテキストを取得
+								PDFTextStripper stripper = new PDFTextStripper();
+								String text = stripper.getText(pdc);
+								String strtext = text;
+
+								//改行ごとに配列に追加
+								pdfPage = strtext.split("\n");
+
+								//明細名を取得する
+								details = getDetails();
+
+								if(details.equals("給与明細")) {
+									//給与明細分割処理
+									fileName = ssp.salarySplitPdf(pdfPage);
+								}else if(details.equals("賞与明細")) {
+									//賞与明細分割処理
+									fileName = bsp.bonusSplitPdf(pdfPage);
+								}
+
+
+								//保存先フォルダが存在しない場合、新規作成
+								savePath = targetPath +  details;
+								File newdir = new File(savePath);
+								if(!newdir.exists()) {
+									newdir.mkdir();
+								}
+
+								// ファイル名を指定
+								pdfName = savePath + "\\" + "【" + details + "】" + fileName;
+
+								// 保存
+								pdc.save(pdfName);
+
+							}
 						}
 
 
-						//保存先フォルダが存在しない場合、新規作成
-						savePath = targetPath + "\\" + details;
-						File newdir = new File(savePath);
-						if(!newdir.exists()) {
-							newdir.mkdir();
-						}
 
-						// ファイル名を指定
-						pdfName = savePath + "\\" + "【" + details + "】" + fileName;
 
-						// 保存
-						pdc.save(pdfName);
-						pdc.close();
+						//pdc.close();
 					}
 
 				}else if(pdfFile.isDirectory()){
 					//振込明細
 					//tdc.TransferDirCreate(pdf,targetPath);
-					savePath = pdf[i];
+					savePath = pdf;
 
 				}else {
-					isPassWordCheck(pdf[i]);
+					isPassWordCheck(pdf);
 					continue;
 				}
 
