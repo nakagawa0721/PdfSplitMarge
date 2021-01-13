@@ -46,9 +46,6 @@ public class PdfSplitFilePath {
 
 			targetPath = FilenameUtils.getFullPath(pdf);
 
-			//FilenameUtils.getName(pdf);
-
-
 //			for(int j = strb.length() -1 ; j > 0 ; j--) {
 //				p = String.valueOf(strb.charAt(j));
 //				//ファイル名を削除
@@ -99,7 +96,7 @@ public class PdfSplitFilePath {
 
 
 								//保存先フォルダが存在しない場合、新規作成
-								savePath = targetPath + "\\" + details;
+								savePath = targetPath +  details;
 								File newdir = new File(savePath);
 								if(!newdir.exists()) {
 									newdir.mkdir();

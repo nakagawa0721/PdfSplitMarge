@@ -1,22 +1,16 @@
 package PdfMarge;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.List;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
-
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.exceptions.BadPasswordException;
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.PdfStamper;
-import com.itextpdf.text.pdf.PdfWriter;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
+import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
 
 
 public class pdfMargeProcess {
@@ -32,9 +26,7 @@ public class pdfMargeProcess {
 	//コードの要素数
 	private int EMPLOYEE_CODE_NUMBER = 1;
 
-	private String PAYMENT_DETAILS_PATH = "\\【支払明細】";
-
-	private String PAYMENT_DETAILS_FOLDER_PATH = "\\支払明細";
+	private String PAYMENT_DETAILS = "支払明細";
 
 
 	/**
@@ -46,16 +38,14 @@ public class pdfMargeProcess {
 
 		String name = null;
 
-		String p = null;
+		int index = 0;
 
-		for(int i = 0; i < fileName.length(); i++) {
-			p = String.valueOf(fileName.charAt(i));
-			//文字列から "】"を検索し、それ以降の文字列を取得
-			if(p.equals("】")) {
-				name = fileName.substring(i + 1);
-				break;
-			}
-		}
+		//】までの文字列を位置を取得
+		index = fileName.indexOf("】");
+
+		//【】以降の文字列を取得
+		name = fileName.substring(index + 1);
+
 		return name ;
 	}
 
@@ -67,13 +57,21 @@ public class pdfMargeProcess {
 	public void pdfFileNameSetList(String[] paths) {
 
 
-		for(int i = 0; i < paths.length ; i++) {
-			File f = new File(paths[i]);
+//		for(int i = 0; i < paths.length ; i++) {
+//			File f = new File(paths[i]);
+//			//ファイルパス内のファイル名を配列に入れる
+//			String[] fList = f.list();
+//			//配列をListに入れる
+//			FILE_LIST.add(fList);
+//
+//		}
+
+		for(String p : paths) {
+			File f = new File(p);
 			//ファイルパス内のファイル名を配列に入れる
 			String[] fList = f.list();
 			//配列をListに入れる
 			FILE_LIST.add(fList);
-
 		}
 
 	}
@@ -93,7 +91,6 @@ public class pdfMargeProcess {
 			//年月、コード、名前を取得
 			list = pdfMargeGetList(FILE_LIST.get(i));
 
-
 			for(int j = 0; j < list.size(); j++) {
 
 				// 給与、賞与、振込のファイル名から同じ年月、コードを検索
@@ -108,7 +105,7 @@ public class pdfMargeProcess {
 					}
 
 					// 給与、賞与、振込の年月、コードごとに結合させる。パスワードが指定されていたら設定する。
-					pdfMargeFileCreate(paths,margeName ,pass);
+					pdfMargeFileCreate(paths, margeName , pass);
 
 				}
 			}
@@ -124,11 +121,13 @@ public class pdfMargeProcess {
 	private void pdfMargeFileCreate(String[] paths, String[] margeName,String pass) {
 
 		String inputName = null;
-		List<InputStream> list = new ArrayList<InputStream>();
+		//List<InputStream> list = new ArrayList<InputStream>();
 		String margeFile = null;
 
 		// 支払明細のファイルパスを取得
-		margeFile = getSaveFolder(paths[0]) +  PAYMENT_DETAILS_PATH +  pdfMargeGetName(margeName[0]);
+		margeFile = getSaveFolder(paths[0]) + "\\" + "【" + PAYMENT_DETAILS + "】"+  pdfMargeGetName(margeName[0]);
+
+		PDFMergerUtility pdfMerger = new PDFMergerUtility();
 
 
 		try {
@@ -138,32 +137,29 @@ public class pdfMargeProcess {
 
 				inputName = paths[i] + "\\" + margeName[i];
 
-				try(InputStream input = new FileInputStream(inputName);){
-					list.add(input);
-				}
-
-
+//				try(InputStream input = new FileInputStream(inputName);){
+//					list.add(input);
+//
+//				}
+				//結合させるファイルを入れる
+				pdfMerger.addSource(new File(inputName));
 
 			}
 
 			try(FileOutputStream mergedPDFOutputStream =  new FileOutputStream(margeFile);){
-				PDFMergerUtility pdfMerger = new PDFMergerUtility();
-				pdfMerger.addSources(list);
-				pdfMerger.setDestinationStream(mergedPDFOutputStream);
 
+				pdfMerger.setDestinationStream(mergedPDFOutputStream);
 				//PDFのMerge出力
 				pdfMerger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly());
-			}
 
+
+			}
 			//パスワードが空白でないとき実行
 			if(!pass.equals("")) {
 				pdfMargeSetPassWord(margeFile, pass);
 			}
 
-
-
 		}catch (IOException e) {
-			// TODO: handle exception
 			e.printStackTrace();
 		}
 
@@ -178,24 +174,12 @@ public class pdfMargeProcess {
 	 */
 	public String getSaveFolder(String path) {
 
-		String p = null;
-		String folderPath = null;
+		String paymentPath = null;
+		//支払明細のファイルパスを取得
+		paymentPath = FilenameUtils.getFullPath(path) + PAYMENT_DETAILS;
 
-		StringBuilder strb = new StringBuilder(path);
-		for(int j = strb.length() -1 ; j > 0 ; j--) {
-			p = String.valueOf(strb.charAt(j));
-			//フォルダ名を削除
-			if(p.equals("\\")) {
-				strb.setLength(path.length() - (path.length() - j));
+		return paymentPath;
 
-				folderPath = strb.toString() + PAYMENT_DETAILS_FOLDER_PATH;
-
-				return folderPath;
-
-			}
-		}
-
-		return folderPath;
 
 	}
 
@@ -247,32 +231,21 @@ public class pdfMargeProcess {
 	 */
 	private ArrayList<String[]> pdfMargeGetList(String[] strs) {
 
-		String str = null;
-
-		String p = null;
-
 		String[] strlist = null ;
 
 		ArrayList<String[]> list = new ArrayList<String[]>();
 
-		for(int i = 0; i < strs.length; i++) {
+		String name = null;
 
-			for(int j = 0; j < strs[i].length(); j++) {
-				p = String.valueOf(strs[i].charAt(j));
-				//文字列から "】"を検索し、それ以降の文字列を取得
-				if(p.equals("】")) {
-					str = strs[i].substring(j + 1);
+		for( String s : strs) {
 
-					//年月、コード、名前に分割しListに入れる
-					strlist = str.split("_", 3);
+			//【】以降の文字列を取得
+			name = pdfMargeGetName(s);
 
-					list.add(strlist);
+			//年月、コード、名前に分割しListに入れる
+			strlist = name.split("_", 3);
 
-					break;
-
-				}
-
-			}
+			list.add(strlist);
 
 		}
 
@@ -285,55 +258,77 @@ public class pdfMargeProcess {
 	 * @param fileName　支払明細PDFファイルパス
 	 * @param pass　パスワード
 	 */
-	private void pdfMargeSetPassWord(String fileName, String pass) {
+	private void pdfMargeSetPassWord(String filePath, String pass) {
 
-		//PDDocument doc = null;
+		//PDFドキュメントの読み込み
+		File file = new File(filePath);
 
-		PdfReader reader = null;
-		PdfStamper stamper = null;
+		try(PDDocument document = PDDocument.load(file);){
+			//アクセス許可オブジェクトの作成
+			AccessPermission accessPermission = new AccessPermission();
 
-		try {
+			//StandardProtectionPolicyオブジェクトの作成
+			StandardProtectionPolicy spp = new StandardProtectionPolicy(pass, pass, accessPermission);
 
-			// パスワードをバイトに変更
-			byte[] ownerPassword = pass.getBytes();
-			byte[] userPassword = pass.getBytes();
+			//暗号化キーの長さを設定
+			spp.setEncryptionKeyLength(128);
 
-			byte[]bFile = Files.readAllBytes(new File(fileName).toPath());
+			//許可の設定
+			spp.setPermissions(accessPermission);
 
-			//同じファイルを扱うためにバイト配列でPdfを開く
-			reader = new PdfReader(bFile);
-			try(FileOutputStream fileOut = new FileOutputStream(fileName)){
-				stamper = new PdfStamper(reader, fileOut);
-				// PDFファイルにパスワードを設定する
-				stamper.setEncryption(userPassword, ownerPassword, PdfWriter.ALLOW_PRINTING |PdfWriter.ALLOW_SCREENREADERS , PdfWriter.ENCRYPTION_AES_256);
-			}
+			//文書の保護
+			document.protect(spp);
 
+			//保存する
+			document.save(filePath);
 
-
-
-
-
-
-		} catch (IOException  e) {
+		} catch (IOException e) {
 			e.printStackTrace();
-		} catch (DocumentException e) {
-			e.printStackTrace();
-		} finally{
-
-			if( stamper != null || reader != null){
-				try {
-					stamper.close();
-					reader.close();
-				} catch (DocumentException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
 		}
 
 		//パスワードが設定されているか確認する
-		pdfMagerFilePassCheck(fileName);
+		pdfMagerFilePassCheck(file, pass);
+
+
+//		//PDDocument doc = null;
+//
+//		PdfReader reader = null;
+//		PdfStamper stamper = null;
+//
+//		try {
+//
+//			// パスワードをバイトに変更
+//			byte[] ownerPassword = pass.getBytes();
+//			byte[] userPassword = pass.getBytes();
+//
+//			byte[]bFile = Files.readAllBytes(new File(fileName).toPath());
+//
+//			//同じファイルを扱うためにバイト配列でPdfを開く
+//			reader = new PdfReader(bFile);
+//			try(FileOutputStream fileOut = new FileOutputStream(fileName)){
+//				stamper = new PdfStamper(reader, fileOut);
+//				// PDFファイルにパスワードを設定する
+//				stamper.setEncryption(userPassword, ownerPassword, PdfWriter.ALLOW_PRINTING |PdfWriter.ALLOW_SCREENREADERS , PdfWriter.ENCRYPTION_AES_256);
+//			}
+//
+//
+//
+//		} catch (IOException  e) {
+//			e.printStackTrace();
+//		} catch (DocumentException e) {
+//			e.printStackTrace();
+//		} finally{
+//
+//			if( stamper != null || reader != null){
+//				try {
+//					stamper.close();
+//				} catch (DocumentException e) {
+//					e.printStackTrace();
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+//			}
+//		}
 
 
 	}
@@ -342,23 +337,18 @@ public class pdfMargeProcess {
 	 * 支払明細PDFファイルにパスワードが設定されているかチェック
 	 * @param filePath 支払明細PDFファイルパス
 	 */
-	private void pdfMagerFilePassCheck(String filePath) {
+	private void pdfMagerFilePassCheck(File filePath, String pass) {
 
-		boolean isValidPdf = true;
+		try (PDDocument document = PDDocument.load(filePath, pass);){
 
-		try {
-			new PdfReader(filePath);
-			isValidPdf = false;
-		}catch (BadPasswordException e) {
-			//パスワードが設定されている場合はisValidPdf=true
+			//暗号化していないとき
+			if(!document.isEncrypted()) {
+				System.out.println(filePath + "の暗号化に失敗しました。");
+			}
 
-		} catch (Exception e) {
+		}catch (Exception e) {
+			// TODO: handle exception
 			e.printStackTrace();
-			isValidPdf = false;
-		}
-
-		if(!isValidPdf) {
-			System.out.println(filePath + "の暗号化に失敗しました。");
 		}
 
 	}
