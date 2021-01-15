@@ -4,17 +4,15 @@ public class SalarySplit {
 
 	private String[] spdfPage;
 	//給与明細の年月の最初の桁数
-	private static int SALARY_YEAR_MONTH_NUMBER_START = 12;
+	private static final int SALARY_YEAR_MONTH_NUMBER_START = 12;
 	//給与明細の年月の最後の桁数
-	private static int SALARY_YEAR_MONTH_NUMBER_END = 22;
+	private static final int SALARY_YEAR_MONTH_NUMBER_END = 22;
 	//年月検索
-	private static String[] YEAR_MONTH_MATCHES = new String[] {"年", "月"};
-
-
+	private static final String[] YEAR_MONTH_MATCHES = new String[] {"年", "月"};
 	//社員コードの桁数
-	private static int CODE_NUMBER = 6;
+	private static final int CODE_NUMBER = 6;
 	//社員コード最小値
-	private static int CODE_MIN = 100000;
+	private static final int CODE_MIN = 100000;
 
 	public String salarySplitPdf(String[] strs) {
 
@@ -24,7 +22,7 @@ public class SalarySplit {
 
 		String name = null;
 
-		String filename = null;
+		String fileName = null;
 
 		spdfPage = strs;
 
@@ -40,7 +38,6 @@ public class SalarySplit {
 		//コードを取得
 		code = getPdfCode();
 
-
 		if(code == null) {
 			System.out.println("社員番号が取得できませんでした。");
 			return null;
@@ -54,9 +51,9 @@ public class SalarySplit {
 			return null;
 		}
 
-		filename = ym + "_" + code + "_" + name + ".pdf";
+		fileName = ym + "_" + code + "_" + name + ".pdf";
 
-		return filename;
+		return fileName;
 
 
 	}

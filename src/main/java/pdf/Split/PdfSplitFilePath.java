@@ -10,27 +10,20 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 public class PdfSplitFilePath {
-	private String[] pdfPage ;
 
-	public String strPass ="";
+//	private String[] pdfPage ;
+
 	//明細書の桁数
-	private int DETAILS_NUMBER = 7;
+	private static final int DETAILS_NUMBER = 7;
 
 	//給与賞与検索
-	private String SALARY_BONUS_MATCHES = "明細書";
+	private static final String SALARY_BONUS_MATCHES = "明細書";
 	//給与
-	private String SALARY_MATCHE = "給与";
+	private static final String SALARY_MATCHE = "給与明細";
 	//賞与
-	private String BONUS_MATCHE = "賞与";
+	private static final String BONUS_MATCHE = "賞与明細";
 
-	SalarySplit ssp = new SalarySplit();
-
-	BonusSplit bsp = new BonusSplit();
-
-	ArrayList<String> pdfList = new ArrayList<String>();
-
-
-	public ArrayList<String> SplitCreate(String[] pdfs) {
+	public ArrayList<String> SplitCreate(String[] pdfPaths) {
 
 		String targetPath = null;
 
@@ -42,101 +35,107 @@ public class PdfSplitFilePath {
 
 		String savePath = null;
 
-		for( String pdf : pdfs) {
+		SalarySplit ssp = new SalarySplit();
+
+		BonusSplit bsp = new BonusSplit();
+
+		String[] pdfPage = null;
+
+
+		ArrayList<String> pdfList = new ArrayList<String>();
+
+		for( String pdf : pdfPaths) {
 
 			targetPath = FilenameUtils.getFullPath(pdf);
 
-//			for(int j = strb.length() -1 ; j > 0 ; j--) {
-//				p = String.valueOf(strb.charAt(j));
-//				//ファイル名を削除
-//				if(p.equals("\\")) {
-//					strb.setLength(strb.length() - (strb.length() - j));
-//					targetPath = strb.toString();
-//					break;
-//				}
-//			}
 
 			File pdfFile = new File(pdf);
 
-			try {
-
-				if(pdfFile.isFile()) {
-
-					try(PDDocument pdDoc = PDDocument.load(pdfFile);) {
-						int numberOfPages = pdDoc.getNumberOfPages();
-
-						for(int n = 0; n < numberOfPages; n++) {
 
 
-							try (PDDocument pdc = new PDDocument();){
-								// ドキュメントオブジェクトの作成
+			//引数がファイルの時
+			if(pdfFile.isFile()) {
 
-								//ページオブジェクトの作成
-								PDPage page = (PDPage) pdDoc.getPage( n );
-								pdc.addPage(page);
+				try(PDDocument pdDoc = PDDocument.load(pdfFile);) {
+					int numberOfPages = pdDoc.getNumberOfPages();
 
-								//PDFf内のテキストを取得
-								PDFTextStripper stripper = new PDFTextStripper();
-								String text = stripper.getText(pdc);
-								String strtext = text;
-
-								//改行ごとに配列に追加
-								pdfPage = strtext.split("\n");
-
-								//明細名を取得する
-								details = getDetails();
-
-								if(details.equals("給与明細")) {
-									//給与明細分割処理
-									fileName = ssp.salarySplitPdf(pdfPage);
-								}else if(details.equals("賞与明細")) {
-									//賞与明細分割処理
-									fileName = bsp.bonusSplitPdf(pdfPage);
-								}
+					for(int n = 0; n < numberOfPages; n++) {
 
 
-								//保存先フォルダが存在しない場合、新規作成
-								savePath = targetPath +  details;
-								File newdir = new File(savePath);
-								if(!newdir.exists()) {
-									newdir.mkdir();
-								}
+						try (PDDocument pdc = new PDDocument();){
+							// ドキュメントオブジェクトの作成
 
-								// ファイル名を指定
-								pdfName = savePath + "\\" + "【" + details + "】" + fileName;
+							//ページオブジェクトの作成
+							PDPage page = (PDPage) pdDoc.getPage( n );
+							pdc.addPage(page);
 
-								// 保存
-								pdc.save(pdfName);
+							//PDFf内のテキストを取得
+							PDFTextStripper stripper = new PDFTextStripper();
+							String text = stripper.getText(pdc);
+							String strtext = text;
 
+							//改行ごとに配列に追加
+							pdfPage = strtext.split("\n");
+
+							//明細名を取得する
+							details = getDetails(pdfPage);
+
+							if("給与明細".equals(details)) {
+								//給与明細分割処理
+								fileName = ssp.salarySplitPdf(pdfPage);
+							}else if("賞与明細".equals(details)) {
+								//賞与明細分割処理
+								fileName = bsp.bonusSplitPdf(pdfPage);
+							}else {
+								System.out.println("引数が給与明細または賞与明細のPDFファイルではありません。引数を変更してください。");
+								System.out.println("処理を終了します。");
+								System.exit(0);
 							}
+
+
+							//保存先フォルダが存在しない場合、新規作成
+							savePath = targetPath +  details;
+							File newdir = new File(savePath);
+							if(!newdir.exists()) {
+								newdir.mkdir();
+							}
+
+							// ファイル名を指定
+							pdfName = savePath + "\\" + "【" + details + "】" + fileName;
+
+							// 保存
+							pdc.save(pdfName);
+
 						}
-
-
-
-
-						//pdc.close();
 					}
+					System.out.println(details + "の分割成功しました。");
 
-				}else if(pdfFile.isDirectory()){
-					//振込明細
-					//tdc.TransferDirCreate(pdf,targetPath);
-					savePath = pdf;
-
-				}else {
-					isPassWordCheck(pdf);
-					continue;
+				}catch (IOException e) {
+					//e.printStackTrace();
+					System.out.println(pdfFile + "はPDFファイルではありません。");
+					System.out.println("処理を終了します。");
+					System.exit(0);
 				}
 
-				pdfList.add(savePath);
+				//引数がフォルダの時
+			}else if(pdfFile.isDirectory()){
+				//振込明細
+				//tdc.TransferDirCreate(pdf,targetPath);
+				savePath = pdf;
 
-
-			}catch (IOException e) {
-				// TODO: handle exception
-				e.printStackTrace();
+				//引数が文字列の時
+			}else {
+//				isPassWordCheck(pdf);
+				continue;
 			}
+
+			pdfList.add(savePath);
+
+
+
 		}
 
-		System.out.println("Split PDF File Complete!!");
+		//System.out.println("Split PDF File Complete!!");
 
 		return pdfList;
 
@@ -147,20 +146,41 @@ public class PdfSplitFilePath {
 	 *
 	 * @return str
 	 */
-	private  String getDetails() {
+	private  String getDetails(String[] pdfPage) {
 
 		String str = null;
 
-		for(int i = 0; i < pdfPage.length; i++) {
-			if(pdfPage[i].trim().length() >= DETAILS_NUMBER) {
-				str = pdfPage[i].trim();
+		String detailsName = null;
 
-				if(IsDetails(str).equals(SALARY_MATCHE) || IsDetails(str).equals(BONUS_MATCHE) ) {
-					return IsDetails(str) + "明細" ;
+		for(String pdf : pdfPage) {
+			if(pdf.trim().length() >= DETAILS_NUMBER) {
+				str = pdf.trim();
+
+				detailsName = IsDetails(str);
+				if(detailsName != null) {
+					return detailsName;
 				}
 			}
 		}
 		return null;
+
+		//		for(int i = 0; i < pdfPage.length; i++) {
+		//			if(pdfPage[i].trim().length() >= DETAILS_NUMBER) {
+		//				str = pdfPage[i].trim();
+		//
+		////				if(IsDetails(str).equals(SALARY_MATCHE) || IsDetails(str).equals(BONUS_MATCHE) ) {
+		////					return IsDetails(str) + "明細" ;
+		////				}
+		//
+		//				detailsName = IsDetails(str);
+		//
+		//				if(detailsName != null) {
+		//					return detailsName;
+		//				}
+		//
+		//			}
+		//		}
+
 	}
 
 
@@ -171,34 +191,22 @@ public class PdfSplitFilePath {
 	 */
 	private String IsDetails(String str) {
 
+		String detailsName = null;
+
 		//明細書と書かれて文字列を検索
 		if(str.contains(SALARY_BONUS_MATCHES)) {
 			//最初の2文字を戻す
-			return str.substring(0,2);
+			detailsName = str.substring(0,2) + "明細";
 		}
+
+		if(SALARY_MATCHE.equals(detailsName) || BONUS_MATCHE.equals(detailsName)) {
+			return detailsName;
+		}
+
 		return null;
 	}
 
-	private void isPassWordCheck(String pass) {
 
-		String passResult = null;
-
-		if(pass.contains("password=")) {
-			passResult = pass.replace("password=", "");
-
-
-			if(passResult.equals("")) {
-				System.out.println("password= はエラーになります。パスワードを設定しない場合は引数に指定しないでください。");
-				System.exit(0);
-			}
-
-			strPass = passResult;
-
-		}else {
-			System.out.println("パスワードはpassword=○○○○の形式で設定してください");
-			System.exit(0);
-		}
-	}
 
 
 }
