@@ -32,6 +32,8 @@ dependencies {
     // Use JUnit Jupiter Engine for testing.
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 	// https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox
 	implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.22'
 
@@ -61,7 +63,7 @@ tasks.named('test') {
 jar {
     manifest {
         attributes('Implementation-Title': 'PdfSplitCreate'
-                 , 'Implementation-Version': 0.04
+                 , 'Implementation-Version': 0.05
                  , 'Main-Class': 'pdf.PdfSplitCreate')
     }
     from configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

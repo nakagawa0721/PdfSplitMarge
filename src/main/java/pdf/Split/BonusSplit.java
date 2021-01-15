@@ -3,16 +3,18 @@ package pdf.Split;
 public class BonusSplit {
 
 	private String[] bpdfPage;
+
 	//賞与明細の年月の桁数
-	private static int YEAR_MONTH_NUMBER = 9;
+	private static final int YEAR_MONTH_NUMBER = 9;
+
 	//年月検索
-	private static String[] YEAR_MONTH_MATCHES = new String[] {"年", "月"};
+	private static final String[] YEAR_MONTH_MATCHES = new String[] {"年", "月"};
 
 	//社員コードの桁数
-	private static int CODE_NUMBER = 6;
+	private static final int CODE_NUMBER = 6;
 
 	//社員コード最小値
-	private static int CODE_MIN = 100000;
+	private static final int CODE_MIN = 100000;
 
 
 	public String bonusSplitPdf(String[] strs) {
@@ -23,11 +25,11 @@ public class BonusSplit {
 
 		String name = null;
 
-		String filename = null;
+		String fileName = null;
 
 		bpdfPage = strs;
 
-
+		//年月を取得
 		ym = getBonusYearMonth();
 
 		if(ym == null) {
@@ -51,9 +53,9 @@ public class BonusSplit {
 			return null;
 		}
 
-		filename = ym + "_" + code + "_" + name + ".pdf";
+		fileName = ym + "_" + code + "_" + name + ".pdf";
 
-		return filename;
+		return fileName;
 
 
 	}

@@ -1,12 +1,14 @@
 pdf/PdfSplitCreate.java
  pdf.PdfSplitCreate
-PdfMarge/pdfMargeProcess.java
- PdfMarge.pdfMargeProcess
+pdf/Merge/PdfMergeCreate.java
+ pdf.Merge.PdfMergeCreate
+pdf/Merge/pdfMergeProcess.java
+ pdf.Merge.pdfMergeProcess
 pdf/Split/PdfSplitFilePath.java
  pdf.Split.PdfSplitFilePath
+pdf/Password/pdfPasswordCheck.java
+ pdf.Password.pdfPasswordCheck
 pdf/Split/BonusSplit.java
  pdf.Split.BonusSplit
 pdf/Split/SalarySplit.java
  pdf.Split.SalarySplit
-PdfMarge/PdfMargeCreate.java
- PdfMarge.PdfMargeCreate

@@ -2,13 +2,11 @@ package pdf;
 
 import java.util.ArrayList;
 
-import PdfMarge.PdfMargeCreate;
+import pdf.Merge.PdfMergeCreate;
+import pdf.Password.pdfPasswordCheck;
 import pdf.Split.PdfSplitFilePath;
 
 public class PdfSplitCreate {
-
-
-	public static ArrayList<String> list = new ArrayList<String>();
 
 
 	public static void main(String args[]) {
@@ -16,21 +14,27 @@ public class PdfSplitCreate {
 
 		PdfSplitFilePath psfp = new PdfSplitFilePath();
 
+		pdfPasswordCheck ppc = new pdfPasswordCheck();
+
 		String pdfPath[] ;
 		String pass = "";
 
+		ArrayList<String> list = new ArrayList<String>();
+
 		// 分割後のファイルパスおよび振込明細のファイルパスを取得
 		list = psfp.SplitCreate(args);
-		pass = psfp.strPass;
+
+		//パスワードを取得
+		pass = ppc.pdfPassCheck(args);
 
 		pdfPath = list.toArray(new String[list.size()]);
 
-		//String[] pdfPaths = pdfFilePathSort(pdfPath);
+		PdfMergeCreate pmc = new PdfMergeCreate();
 
-		PdfMargeCreate pmc = new PdfMargeCreate();
-
-		pmc.pdfMarge(pdfPath, pass);
+		pmc.pdfMerge(pdfPath, pass);
 	}
+
+}
 
 
 
@@ -76,4 +80,4 @@ public class PdfSplitCreate {
 //
 //
 //	}
-}
+
